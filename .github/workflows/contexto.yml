@@ -1,0 +1,12 @@
+name: Practica Variables de Contexto
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  ejemplo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inicio del workflow
+        run: echo "Comenzando práctica de GitHub Actions"
