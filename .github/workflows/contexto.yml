@@ -1,12 +1,106 @@
-name: Practica Variables de Contexto
+name: GitHub Actions Context Practice
 
 on:
   push:
   workflow_dispatch:
+    inputs:
+      name:
+        description: "Rafa"
+        required: true
+        default: "Student"
+      environment:
+        description: "Deployment environment"
+        required: true
+        default: "production"
 
 jobs:
-  ejemplo:
+  example:
     runs-on: ubuntu-latest
+    env:
+      GREETING: "Hello from env"
     steps:
-      - name: Inicio del workflow
-        run: echo "Comenzando práctica de GitHub Actions"
+      - name: Start workflow
+        run: echo "Starting GitHub Actions context practice"
+
+      # github context
+      - name: GitHub context variables
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Number: ${{ github.run_number }}"
+
+      # env
+      - name: Use environment variable
+        run: echo "${{ env.GREETING }}"
+
+      # vars (make sure you created MY_GLOBAL_VAR in GitHub repository settings)
+      - name: Use repository variable
+        run: echo "Global variable value:${{ vars.MY_GLOBAL_VAR }}"
+
+      # steps
+      - id: generate
+        run: echo "result=Hello World" >> $GITHUB_OUTPUT
+
+      - name: Use previous step output
+        run: echo "Step output:${{ steps.generate.outputs.result }}"
+
+      # job
+      - name: Job status
+        if: ${{ job.status == 'success' }}
+        run: echo "The job executed successfully"
+
+      - name: Job name
+        run: echo "Current job name:${{ job.name }}"
+
+      # runner
+      - name: Runner information
+        run: |
+          echo "OS: ${{ runner.os }}"
+          echo "Architecture: ${{ runner.arch }}"
+          echo "Temporary directory: ${{ runner.temp }}"
+          echo "Tool cache directory: ${{ runner.tool_cache }}"
+
+      # secrets (make sure you created TEST_SECRET in GitHub)
+      - name: Use secret
+        env:
+          SECRET_VALUE: ${{ secrets.TEST_SECRET }}
+        run: echo "Secret loaded successfully (do not print it)"
+
+      # inputs
+      - name: Use workflow input
+        run: echo "Hello, ${{ inputs.name }}"
+      - name: Check deployment environment
+        if: ${{ inputs.environment == 'production' }}
+        run: echo "Deploying to production"
+
+  matrix-job:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: [3.8, 3.9]
+    steps:
+      - name: Show matrix configuration
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Python version: ${{ matrix.python }}"
+
+  job1:
+    runs-on: ubuntu-latest
+    outputs:
+      message: ${{ steps.out.outputs.msg }}
+    steps:
+      - id: out
+        run: echo "msg=Hello from job1" >> $GITHUB_OUTPUT
+
+  job2:
+    runs-on: ubuntu-latest
+    needs: job1
+    steps:
+      - name: Use output from job1
+        run: echo "Message:${{ needs.job1.outputs.message }}"
